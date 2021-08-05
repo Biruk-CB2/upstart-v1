@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	<flow name="token-request-flow" doc:id="22e0b1e5-4c75-4c87-84b9-96effc1115b6" >
+	<!-- 	<until-successful maxRetries="2" doc:name="Until Successful" doc:id="3a222a84-1f44-41a4-a4ec-d1a17634a067" millisBetweenRetries="8000"> -->
+	<!-- 	</until-successful> -->
+		<try doc:name="Try" doc:id="4f0a47bd-68eb-492a-8ea4-e829880213bd" >
+			<http:request method="GET" doc:name="HTTPS: Login(GET)" doc:id="7fb8f821-0c1d-425d-800f-7243e2c2b272" config-ref="HTTPS_Authentication_Request_configuration" path="/identityprovider/login" responseTimeout="300000">
+			<http:headers><![CDATA[#[output application/java
+---
+{
+	"username" : attributes.headers.username,
+	"password" : attributes.headers.password,
+	"UUID" : attributes.headers.UUID
+}]]]></http:headers>
+		</http:request>
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="40182f37-61fe-4535-a41d-13cc6f479271" type="HTTP:CONNECTIVITY">
+					<logger level="INFO" doc:name="Logger" doc:id="d05c132a-462c-4e50-a18f-0a765b53a327" />
+					<until-successful maxRetries="1" doc:name="Until Successful" doc:id="ea071ea1-ffce-438a-a69d-11232f300fcc" millisBetweenRetries="7000">
+						<http:request method="GET" doc:name="HTTPS: Login(GET)" doc:id="a3daddd1-6244-441d-8a8b-c303878a547a" config-ref="HTTPS_Authentication_Request_configuration" path="/identityprovider/login" responseTimeout="300000">
+			<http:headers><![CDATA[#[output application/java
+---
+{
+	"username" : attributes.headers.username,
+	"password" : attributes.headers.password,
+	"UUID" : attributes.headers.UUID
+}]]]></http:headers>
+		</http:request>
+					</until-successful>
+				
+</on-error-propagate>
+			</error-handler>
+		</try>
+		<logger level="INFO" doc:name="info" doc:id="5f7358d7-eb9c-4a19-8808-689a4bbe6480" message="#[payload]" />
+		<error-handler ref="global-error-handler">
+	</error-handler>
+	</flow>
+</mule>

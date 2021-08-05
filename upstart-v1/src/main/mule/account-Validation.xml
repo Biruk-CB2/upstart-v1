@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="account-ValidationFlow" doc:id="f0c7d8d0-8625-4fa9-80bd-c0db452ed52b" >
+		<http:request method="GET" doc:name="GET: Customer Profile Dynamic" doc:id="a17abbf5-ecd2-4198-99ac-282a5adf1de0" config-ref="HTTPS_codeconnect_Request_configuration" path="/customers/profile">
+			<http:query-params ><![CDATA[#[output application/java
+---
+{
+	"AccountNumber" : payload.CustomerNumber
+}]]]></http:query-params>
+		</http:request>
+		<ee:transform doc:name="Transform Message" doc:id="70ae179b-1fb9-43c3-bcd5-aa224ba8ace1" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+var cstNmbr =(payload.Entity.'customer-email-addressLst'.'control-data'.CustNbr)[0]
+---
+{
+    accountNumber : (payload.Entity.'dynamic-related-accountsLst' 
+     filter (($.CIRltApplCde1? and $.CIRltApplCde1 =="DP")
+     and ($.DPCategory? and $.DPCategory == "D") 
+     and (($.DPOpenInd?) and ($.DPOpenInd == "" or $.DPOpenInd == "Z")) 
+     and ($.CIEnt1ToEnt2RltCde? and $.CIEnt1ToEnt2RltCde == 901)) map 
+     {
+        
+        ($)
+
+     })[0].DPAcctNbr,
+
+    customerNumber: cstNmbr
+}
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<choice doc:name="Choice" doc:id="2ae8615a-d013-48b7-bf85-1e9116e5d2d5" >
+			<when expression="#[payload.accountNumber != null]">
+				<ee:transform doc:name="Transform Message" doc:id="0dcbae43-a8a0-479b-a0ee-9813ed02765e" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	 accountNumber: payload.accountNumber,
+	routingNumber: p('secure::RoutingNumber'),
+	status: "200",
+	message:  "Customer has an Existing Valid Account"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</when>
+			<when expression="#[payload.customerNumber != null]">
+				<set-payload value="#[vars.initialPayload]" doc:name="IntialPayload" doc:id="76ceb299-d157-4b8b-95a1-c7cd8dd4f427" />
+				<flow-ref doc:name="create-new-account" doc:id="ee2699ce-c080-4c9d-a6d3-a00469d792c5" name="create-new-account-sub-Flow"/>
+			</when>
+			<otherwise >
+				<logger level="INFO" doc:name="Logger" doc:id="eac13c35-6b85-4d87-9944-71309df34709" message="#[payload]"/>
+				<ee:transform doc:name="Transform Message" doc:id="acdb1b40-9614-4a78-9ca6-460ca9cab6c8" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	StatusCode: 500,
+	Message: "Internal Server Error"
+}]]></ee:set-payload>
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="statusCode" ><![CDATA[%dw 2.0
+output application/java
+---
+500]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+			</otherwise>
+		</choice>
+	</flow>
+</mule>

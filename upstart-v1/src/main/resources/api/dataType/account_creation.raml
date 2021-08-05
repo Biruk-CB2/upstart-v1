@@ -1,0 +1,193 @@
+#%RAML 1.0 DataType
+
+type: object
+properties:
+  FirstName: 
+    type: string
+    minLength: 1
+    maxLength: 20
+
+  LastName: 
+    type: string
+    minLength: 1
+    maxLength: 20
+  StreetAddress1: 
+    type: string
+    minLength: 1
+    maxLength: 20
+  StreetAddress2?: 
+    type: string
+    minLength: 1
+    maxLength: 20
+  City: 
+    type: string
+    minLength: 1
+    maxLength: 30
+  State: 
+    type: string
+    minLength: 1
+    maxLength: 2
+  Zip:
+    type: string
+    minLength: 1
+    maxLength: 5
+  DOB:  
+   type: string
+   minLength: 1
+   maxLength: 10
+  SSN: 
+    type: string
+    minLength: 1
+    maxLength: 9
+  Phone:  
+    type: string
+    minLength: 1
+    maxLength: 10
+  Email:
+    type: string
+    minLength: 1
+    maxLength: 64 
+  IPAdress?:
+    type: string
+    minLength: 1
+    maxLength: 20 
+  Branch:
+    type: string
+    minLength: 1
+    maxLength: 3
+  ProdCode:
+    type: string
+    minLength: 1
+    maxLength: 3 
+  BinNumber:
+    type: string
+    minLength: 1
+    maxLength: 6 
+  Occupation:
+    type: string
+    minLength: 1
+    maxLength: 40 
+  OccupationStatus:
+    type: string
+    minLength: 1
+    maxLength: 20 
+  Citizenship:
+    type: string
+    minLength: 1
+    maxLength: 2 
+  MothersMaiden:
+    type: string
+    minLength: 1
+    maxLength: 20 
+  IDType:
+    type: string
+    minLength: 1
+    maxLength: 20
+  IDExpired: 
+    type: string
+    minLength: 1
+    maxLength: 10
+  IDIssued:
+    type: string
+    minLength: 1
+    maxLength: 10 
+  IDNumber:
+    type: string
+    minLength: 1
+    maxLength: 20
+  IDState: 
+    type: string
+    minLength: 1
+    maxLength: 2 
+  SrcOfFunds:
+    type: string
+    minLength: 1
+    maxLength: 20 
+  TypOfFunds:
+    type: string
+    minLength: 1
+    maxLength: 20 
+  PrpOfAcct:
+    type: string
+    minLength: 1
+    maxLength: 40 
+  NbrOfDp:
+    type: string
+    minLength: 1
+    maxLength: 5 
+  TotDpAmt:
+    type: string
+    minLength: 1
+    maxLength: 10
+  NbrOfCashDp:
+    type: string
+    minLength: 1
+    maxLength: 5 
+  CashDpAmt:
+    type: string
+    minLength: 1
+    maxLength: 10     
+  NbrOfCashWthdrwl:
+    type: string
+    minLength: 1
+    maxLength: 5 
+  CashWthdrwlAmt:
+    type: string
+    minLength: 1
+    maxLength: 10
+  DomInWireAct:
+    type: string
+    minLength: 1
+    maxLength: 1 
+  NbrDomWire:
+    type: string
+    minLength: 1
+    maxLength: 5 
+  DomInWireAmt:
+    type: string
+    minLength: 1
+    maxLength: 10 
+  DomOutWireAct:
+    type: string
+    minLength: 1
+    maxLength: 1
+  NbrDomOutWire:
+    type: string
+    minLength: 1
+    maxLength: 5 
+  DomOutWireAmt:
+    type: string
+    minLength: 1
+    maxLength: 10 
+  FrgnInWireAct:
+    type: string
+    minLength: 1
+    maxLength: 1 
+  NbrFrgnInWire:
+    type: string
+    minLength: 1
+    maxLength: 5 
+  InCtryCde:
+    type: string
+    minLength: 1
+    maxLength: 3
+  FrgnInWireAmt:
+    type: string
+    minLength: 1
+    maxLength: 10 
+  FrgnOutWireAct:
+    type: string
+    minLength: 1
+    maxLength: 1 
+  NbrFrgnOutWire:
+    type: string
+    minLength: 1
+    maxLength: 5 
+  FrgnOutWireAmt:
+    type: string
+    minLength: 1
+    maxLength: 10 
+  OutCtryCde:
+    type: string
+    minLength: 1
+    maxLength: 3 

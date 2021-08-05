@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway"
+	xmlns:tls="http://www.mulesoft.org/schema/mule/tls" xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties"
+	xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd 
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd
+http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd
+http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
+	<http:listener-config name="upstart-v1-httpListenerConfig">
+        <http:listener-connection host="0.0.0.0" port="${secure::https.private.port}" protocol="HTTPS">
+			<tls:context >
+				<tls:trust-store type="jks" insecure="true" />
+				<tls:key-store type="jks" path="keystore2.jks" keyPassword="${secure::tls.kpw}" password="${secure::tls.pw}" />
+			</tls:context>
+		</http:listener-connection>
+    </http:listener-config>
+    <apikit:config name="upstart-v1-config" api="upstart-v1.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <http:request-config name="HTTPS_Authentication_Request_configuration" doc:name="HTTP Request configuration" doc:id="ae3bdbd8-ecd8-4386-a334-1f05d6890092" >
+		<http:request-connection host="${secure::authentication.https.host}" port="${secure::authentication.https.port}" protocol="HTTPS">
+			<tls:context >
+				<tls:trust-store insecure="true" />
+			</tls:context>
+		</http:request-connection>
+	</http:request-config>
+	<global-property doc:name="Global Property" doc:id="ed04a7f7-cd88-4552-b2d5-3d1b871c4357" name="env" value="dev" />
+	<secure-properties:config name="Secure_Properties_Config" doc:name="Secure Properties Config" doc:id="c339e2a7-bbb1-4e9c-ab63-270f0b17816c" file="config/${env}.yaml" key="${encrypt.key}">
+		<secure-properties:encrypt algorithm="Blowfish" />
+	</secure-properties:config>
+	<http:request-config name="HTTPS_codeconnect_Request_configuration" doc:name="HTTP Request configuration" doc:id="39a209d3-6856-4886-a128-84505ef0bd10" >
+		<http:request-connection protocol="HTTPS" host="${secure::codeconnect.https.host}" port="${secure::codeconnect.https.port}" >
+			<tls:context >
+				<tls:trust-store insecure="true" />
+			</tls:context>
+			<http:authentication >
+				<http:basic-authentication username="${secure::codeconnect.username}" password="${secure::codeconnect.password}" />
+			</http:authentication>
+		</http:request-connection>
+		<http:default-headers />
+	</http:request-config>
+	
+	
+ </mule>

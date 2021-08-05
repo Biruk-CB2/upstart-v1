@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<error-handler name="global-error-handler" doc:id="4dcafe6f-a375-4bc3-a254-6616d4fab745" >
+		           <on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="20e95c2c-6555-4819-a8d5-468d5741e10e" type="HTTP:UNAUTHORIZED">
+			<logger level="INFO" doc:name="Logger" doc:id="1ef8570f-3862-423b-a6a1-6e5bb1459e7c" message="#[error.errorMessage.payload]"/>
+			<ee:transform doc:name="Transform Message" doc:id="7c9f1342-8ec2-4bf5-bba8-c87d732212fa" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+
+if ((error.errorMessage.payload) != null)
+	error.errorMessage.payload 
+else 
+	payload]]></ee:set-payload>
+				</ee:message>
+				<ee:variables >
+					<ee:set-variable variableName="httpStatus" ><![CDATA[401]]></ee:set-variable>
+					<ee:set-variable variableName="reasonPhrase" ><![CDATA["Unauthorized request"]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+		</on-error-propagate>
+		           	<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="e4ed0c2e-0e06-44b9-ab3b-db3e542bfe2c" type="HTTP:FORBIDDEN, AUTH:TOKEN_EMPTY, AUTH:TOKEN_NOTPASSED">
+			<logger level="INFO" doc:name="Logger" doc:id="7030ca43-4e6b-45e5-8b2d-df7d999d9959" message="#[error.errorMessage.payload]"/>
+			<ee:transform doc:name="Transform Message" doc:id="b4e9331e-fd19-4254-b997-84220b26c5eb" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+
+if ((error.errorMessage.payload) != null)
+	error.errorMessage.payload 
+else if (error != null and ((error.errorType.asString) contains "EMPTY"))
+	{
+		Status: 403,
+		Message: "Token is not passed, Please pass the token and try again"
+	}
+else if (error != null and ((error.errorType.asString) contains "TOKEN_NOTPASSED"))
+	{
+		Status: 403,
+		Message: "Token is not valid, Please pass a valid token and try again"
+	}
+else 
+	{
+		Status: 500,
+		Message: error.description
+	}
+]]></ee:set-payload>
+				</ee:message>
+				<ee:variables >
+					<ee:set-variable variableName="httpStatus" ><![CDATA[403]]></ee:set-variable>
+					<ee:set-variable variableName="reasonPhrase" ><![CDATA["Re-authentication required"]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+		</on-error-propagate>
+		           
+		            <on-error-propagate type="APIKIT:BAD_REQUEST" enableNotifications="true" logException="true">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+var uri = attributes.rawRequestPath contains "/login"
+var uname = attributes.headers.username?
+var pass = attributes.headers.password?
+
+var missingHeader = if (uri and (not (uname)) and (not (pass))) 
+                        "Unauthorized request, Username and password are not passed"
+                    else if (uri and (not (uname)))
+                        "Unauthorized request, Username is not passed"
+                    else if (uri and (not (pass)))
+                        "Unauthorized request, Password is not passed"
+                    else 
+                       (error.description)
+---
+{
+		"status": 400,
+    	"Message": "Invalid request: Required field is incorrect/missing: " ++ missingHeader
+}
+
+]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus"><![CDATA[400]]></ee:set-variable>
+						<ee:set-variable variableName="reasonPhrase" ><![CDATA["Bad Request"]]></ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="d13f7c19-3ab9-499b-8525-a574683a873b" type="HTTP:CONNECTIVITY, HTTP:RETRY_EXHAUSTED, HTTP:TIMEOUT">
+			<logger level="ERROR" doc:name="Logger" doc:id="f2db442d-0904-49b7-a6d2-e51465b23dba" />
+			<ee:transform doc:name="Transform Message" doc:id="9547323e-ef12-4985-ae8c-cb82dffb4157" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	Status: 500,
+	Message: "Internal system error"
+}
+	]]></ee:set-payload>
+				</ee:message>
+				<ee:variables >
+					<ee:set-variable variableName="httpStatus" ><![CDATA[500]]></ee:set-variable>
+					<ee:set-variable variableName="reasonPhrase" ><![CDATA["Service unavailable at the moment"]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+		</on-error-propagate>
+
+            <on-error-propagate type="APIKIT:METHOD_NOT_ALLOWED">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	Message: "Method not allowed."
+}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus"><![CDATA[405]]></ee:set-variable>
+						<ee:set-variable variableName="reasonPhrase" ><![CDATA["method not allowed"]]></ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_FOUND" enableNotifications="true" logException="true">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"Status": 404,
+    "Message": "Resource not found"
+}
+]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus"><![CDATA[404]]></ee:set-variable>
+						<ee:set-variable variableName="reasonPhrase" ><![CDATA[
+"Resource not found"]]></ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        
+            <on-error-propagate type="APIKIT:UNSUPPORTED_MEDIA_TYPE">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message: "Unsupported media type."
+}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus"><![CDATA[415]]></ee:set-variable>
+					<ee:set-variable variableName="reasonPhrase" ><![CDATA["Unsupported media type"]]></ee:set-variable>
+                    
+</ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="ca6a2803-6db4-4a38-8083-56a3c6300f74" type="ANY">
+			<logger level="ERROR" doc:name="Logger" doc:id="a2fd7e2c-d4be-489b-8d87-3e6e4afca612" />
+			<ee:transform doc:name="Transform Message" doc:id="1c84f0b8-9f1f-4a20-b269-1b41bb3d388b" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	Status: 500,
+	Message: "Internal System Error"
+}]]></ee:set-payload>
+				</ee:message>
+				<ee:variables >
+					<ee:set-variable variableName="httpStatus" ><![CDATA[500]]></ee:set-variable>
+					<ee:set-variable variableName="reasonPhrase" ><![CDATA["General system error"]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+		</on-error-propagate>
+		
+		</error-handler>
+</mule>

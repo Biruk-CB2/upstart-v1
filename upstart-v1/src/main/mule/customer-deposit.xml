@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:sockets="http://www.mulesoft.org/schema/mule/sockets" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/sockets http://www.mulesoft.org/schema/mule/sockets/current/mule-sockets.xsd">
+	<sub-flow name="token-validation-sub-flow" doc:id="213a73b9-73f3-4a98-a9eb-509bdb063496" >
+		<http:request method="GET" doc:name="Token-Validation" doc:id="9e64a9dd-b807-47da-9057-b7338836564a" config-ref="HTTPS_Authentication_Request_configuration" path="/identityprovider/validate-token">
+			<reconnect />
+			<http:headers><![CDATA[#[output application/java
+---
+{
+	"time" : attributes.headers.time,
+	"token" : attributes.headers.token,
+	"UUID" : attributes.headers.UUID
+}]]]></http:headers>
+		</http:request>
+		<ee:transform doc:name="Transform Message" doc:id="8ad0caba-c379-4cf2-816a-b6f61f97d0b4">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+	<sub-flow name="check-SSN-sub-flow" doc:id="1d6a7a15-cffe-47b1-8ba6-1af4e18b3707" >
+		<flow-ref doc:name="check-token-expire" doc:id="ddbd4345-a868-4825-a0c2-64cf332539d8" name="token-validation-sub-flow" target="token"/>
+		<ee:transform doc:name="Transform Message" doc:id="e708c427-3587-42f3-b9ea-1e6ad6d4f7dc">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+payload]]></ee:set-payload>
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="Variable_TaxID"><![CDATA[%dw 2.0
+output application/java
+---
+{
+	
+	TaxID: payload.SSN,
+	//IsOrganization: payload.IsOrganization default null
+
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="b560fb44-7cb1-46a5-9ce1-4cdb20555531" message="#[payload]" />
+		<http:request method="GET" doc:name="Request" doc:id="59d24c5b-9ca6-4036-b5e6-33ef5a664c1a" config-ref="HTTPS_codeconnect_Request_configuration" path="/customers-tax-id" responseTimeout="1200000">
+			<http:query-params><![CDATA[#[output application/java
+---
+{
+	"TaxID" : payload.SSN,
+	"IsOrganization" : false
+}]]]></http:query-params>
+		</http:request>
+		<logger level="INFO" doc:name="Logger" doc:id="e059bdaf-f788-46e6-9f5c-5af62c0e0d8a" message="#[payload]" />
+	</sub-flow>
+	
+	<flow name="customer-deposit-Flow" doc:id="8a724349-1abe-46fc-95eb-f32ccbecf6e0" >
+		<ee:transform doc:name="Transform Message" doc:id="3b688147-4633-4dfe-b753-c42aafb55310" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="initialPayload" ><![CDATA[%dw 2.0
+output application/java
+---
+payload
+]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<flow-ref doc:name="check-SSN-sub-flow" doc:id="1bbf0b5b-5fc8-4bf9-a152-db4a19751a8b" name="check-SSN-sub-flow"/>
+		<ee:transform doc:name="Transform Message" doc:id="b80443db-4b0b-4ca3-b6e2-58d9dba72057">
+			<ee:message>
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+
+	payload
+]]></ee:set-payload>
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="Exists"><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<choice doc:name="Choice" doc:id="b2e7c81e-1e3d-449b-9b7e-e1e502c55464">
+			<when expression="#[vars.isDWcall == true]">
+				<logger level="INFO" doc:name="Logger" doc:id="0a8edc81-efe6-4680-84db-652425fe242e" message="#[payload]"/>
+				<ee:transform doc:name="Transform Message" doc:id="3497a94d-7639-44d6-ae15-4ebe88ae8c37">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload
+]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			
+</when>
+			<when expression="#[payload.Exists]">
+				<logger level="INFO" doc:name="Logger" doc:id="29a44158-3c13-419f-86f9-e46163346132" message="#[payload]"/>
+				<flow-ref doc:name="account-ValidationFlow" doc:id="8a2baf59-4818-4cdf-a268-32bbcaa321a8" name="account-ValidationFlow"/>
+			</when>
+			
+			<otherwise>
+				<logger level="INFO" doc:name="Logger" doc:id="06c00a60-bb38-4257-a4a4-db3f619c9fc2" message="#[payload]" />
+				<set-payload value="#[vars.initialPayload]" doc:name="initialPayload-var" doc:id="861227e5-c375-4d3a-be8d-02d4f2a43a88" />
+				<flow-ref doc:name="create-new-account-sub-Flow" doc:id="1ef080c0-62b9-4698-8324-60a4b4358be0" name="create-new-account-sub-Flow"/>
+			</otherwise>
+		</choice>
+		<error-handler ref="global-error-handler">
+	</error-handler>
+	</flow>
+	<sub-flow name="create-new-account-sub-Flow" doc:id="84b161e6-e157-4700-ac00-4c93d8371a54" >
+		<ee:transform doc:name="Transform Message" doc:id="8edde73f-a78b-4a49-83ec-9261fe47527e" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "FirstName": payload.FirstName,
+  "LastName": payload.LastName,
+  "StreetAddress1": payload.StreetAddress1,
+  "StreetAddress2": payload.StreetAddress2,
+  "City": payload.City,
+  "State": payload.State,
+  "Zip": payload.Zip,
+  "DOB": payload.DOB,
+  "SSN": payload.SSN,
+  "Phone":  payload.Phone,
+   "Email": payload.Email,
+  "Branch": payload.Branch default "107",
+  "Code": payload.ProdCode default "002",
+  "BinNumber": payload.BinNumber default "429708",
+  "Occupation": payload.Occupation,
+  "OccupationStatus": payload.OccupationStatus,
+  "MothersMaiden": payload.MothersMaiden,
+  "IDCountry": "USA",
+  "IDState": payload.IDState,
+  "IDNumber": payload.IDNumber,
+  "IDType": payload.IDType,
+  "IDIssued": payload.IDIssued,
+  "IDExpired": payload.IDExpired
+}
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<http:request method="POST" doc:name="Request" doc:id="1978774d-4152-4c54-8e2a-20b2be7a78e5" config-ref="HTTPS_codeconnect_Request_configuration" path="/customer-deposit" />
+		<logger level="INFO" doc:name="Logger" doc:id="e71bf524-0d60-474f-bdaa-18616bacdba6" message="#[payload]"/>
+		<ee:transform doc:name="Transform Message" doc:id="5162542b-8b8e-4430-81ab-bba37c0a8968" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	
+    accountNumber:  payload.AccountNumber,
+	routingNumber: p('secure::RoutingNumber'),
+	status: "201",
+	message:  "New Account Opened Successfully"
+
+
+
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+	
+</mule>

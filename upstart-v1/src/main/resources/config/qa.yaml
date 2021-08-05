@@ -1,0 +1,41 @@
+https:
+  private:
+    port: "8092"
+    
+# tls configuration
+tls:
+  kpw: "![lYGlCW07+eeBupCa0O5P3A==]"
+  pw: "![lYGlCW07+eeBupCa0O5P3A==]"    
+    
+#- Authentication service configuration
+
+authentication:
+  https:
+    host: "devapi.customersbank.com"
+    #host: "0.0.0.0"
+    port: "443"
+    #port: "8092"
+ 
+    
+  #- CodeConnect configuration
+
+codeconnect:
+  https:
+    host: "mule-worker-internal-codeconnect.us-e1.cloudhub.io"
+    #host: "localhost"
+    port: "443"
+  username: "![/lp8BuhUSfjbVKvO1wCBWlfqOP3dpEQS]"
+  password: "![OKogbBf+2rM3nXYWOS5I7NZ3Pj5EXhcM6MNqW14MbX9pLvnmtX8nFw==]"
+  apiId: "16241701"
+  
+  #- Hardcode value for Routing number
+RoutingNumber: "031302971"
+
+  #DW config for alternate route
+
+#DW:
+  #dw_user: "![fERnR96tpcM=]"
+  #dw_password: "![xFaM0P9gtIytA0EqbINCoQ==]"
+  #dw_service_name: "dwdev.customersbank.com"
+  #dw_host: "10.188.65.165"
+  #dw_port: "1521"

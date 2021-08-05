@@ -1,0 +1,4 @@
+{
+  "minMuleVersion": "4.3.0",
+  "secureProperties": ["encrypt.key", "codeconnect.username", "codeconnect.password","tls.pw","tls.kpw","Rafc", "FISCertKey","KeystorePassword","Bearer","AuthToken"]
+}
