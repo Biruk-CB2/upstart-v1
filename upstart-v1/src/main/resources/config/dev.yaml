@@ -2,6 +2,9 @@ https:
   private:
     port: "8092"
     
+api:
+  name: "upstart-v1"
+    
   
     
 # tls configuration
@@ -23,7 +26,7 @@ authentication:
 
 codeconnect:
   https:
-    host: "mule-worker-internal-codeconnect.us-e1.cloudhub.io"
+    host: "mule-worker-internal-codeconnectv1.us-e1.cloudhub.io"
     #host: "localhost"
     port: "443"
   username: "![/lp8BuhUSfjbVKvO1wCBWlfqOP3dpEQS]"
@@ -34,9 +37,19 @@ RoutingNumber: "031302971"
 
   #DW config for alternate route
 
-#DW:
-  #dw_user: "![fERnR96tpcM=]"
-  #dw_password: "![xFaM0P9gtIytA0EqbINCoQ==]"
-  #dw_service_name: "dwdev.customersbank.com"
-  #dw_host: "10.188.65.165"
-  #dw_port: "1521"
+DW:
+  dw_user: "etluser"
+  dw_password: "![xFaM0P9gtIytA0EqbINCoQ==]"
+  dw_service_name: "dwdev.customersbank.com"
+  dw_host: "10.188.65.165"
+  dw_port: "1521"
+  
+  #splunk config detail:
+  
+splunk:
+  host: "http-inputs-customersbank.splunkcloud.com"
+  port: "443"
+  basePath: "/services"
+  token: "Splunk C23A75F9-8930-4035-BFB4-4685245F50F6"
+  resourcePath: "/collector/raw"
+

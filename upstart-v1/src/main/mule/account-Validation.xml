@@ -6,13 +6,30 @@
 http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
 http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
 	<flow name="account-ValidationFlow" doc:id="f0c7d8d0-8625-4fa9-80bd-c0db452ed52b" >
-		<http:request method="GET" doc:name="GET: Customer Profile Dynamic" doc:id="a17abbf5-ecd2-4198-99ac-282a5adf1de0" config-ref="HTTPS_codeconnect_Request_configuration" path="/customers/profile">
-			<http:query-params ><![CDATA[#[output application/java
+		<try doc:name="Try" doc:id="cf18fa2e-db31-40b8-bb07-008211fc9320" >
+			<http:request method="GET" doc:name="GET: Customer Profile Dynamic" doc:id="a17abbf5-ecd2-4198-99ac-282a5adf1de0" config-ref="HTTPS_codeconnect_Request_configuration" path="/customers/profile" responseTimeout="30000">
+			<http:query-params><![CDATA[#[output application/java
 ---
 {
 	"AccountNumber" : payload.CustomerNumber
 }]]]></http:query-params>
 		</http:request>
+		<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="7456f7ee-ac6f-4d5b-ba21-17ec31ec5678" type="HTTP:CONNECTIVITY">
+					<logger level="INFO" doc:name="Logger" doc:id="cd56e3d7-dca5-4453-9a8b-ca99525bcb20" />
+					<until-successful maxRetries="1" doc:name="Until Successful" doc:id="12d412f0-f242-4f42-8268-78547798621b" millisBetweenRetries="7000">
+						<http:request method="GET" doc:name="GET: Customer Profile Dynamic" doc:id="fcf45d1b-9eaa-44ff-8cfd-803bea42d447" config-ref="HTTPS_codeconnect_Request_configuration" path="/customers/profile" responseTimeout="30000">
+			<http:query-params><![CDATA[#[output application/java
+---
+{
+	"AccountNumber" : payload.CustomerNumber
+}]]]></http:query-params>
+		</http:request>
+					</until-successful>
+				
+</on-error-propagate>
+			</error-handler>
+		</try>
 		<ee:transform doc:name="Transform Message" doc:id="70ae179b-1fb9-43c3-bcd5-aa224ba8ace1" >
 			<ee:message >
 				<ee:set-payload ><![CDATA[%dw 2.0
@@ -44,10 +61,10 @@ var cstNmbr =(payload.Entity.'customer-email-addressLst'.'control-data'.CustNbr)
 output application/json
 ---
 {
-	 accountNumber: payload.accountNumber,
+	accountNumber: payload.accountNumber,
 	routingNumber: p('secure::RoutingNumber'),
-	status: "200",
-	message:  "Customer has an Existing Valid Account"
+	Status: "200",
+	Message:  "Customer has an Existing Valid Account"
 }]]></ee:set-payload>
 					</ee:message>
 				</ee:transform>
@@ -65,7 +82,7 @@ output application/json
 ---
 {
 	StatusCode: 500,
-	Message: "Internal Server Error"
+	Message: "Internal System Error"
 }]]></ee:set-payload>
 					</ee:message>
 					<ee:variables >

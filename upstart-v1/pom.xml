@@ -77,6 +77,12 @@
 			<artifactId>ojdbc6</artifactId>
 			<version>0.1</version>
 		</dependency>
+		<dependency>
+			<groupId>org.mule.connectors</groupId>
+			<artifactId>mule-email-connector</artifactId>
+			<version>1.4.1</version>
+			<classifier>mule-plugin</classifier>
+		</dependency>
 	</dependencies>
 
 	<repositories>

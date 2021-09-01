@@ -8,8 +8,8 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
 http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
 http://www.mulesoft.org/schema/mule/sockets http://www.mulesoft.org/schema/mule/sockets/current/mule-sockets.xsd">
 	<sub-flow name="token-validation-sub-flow" doc:id="213a73b9-73f3-4a98-a9eb-509bdb063496" >
-		<http:request method="GET" doc:name="Token-Validation" doc:id="9e64a9dd-b807-47da-9057-b7338836564a" config-ref="HTTPS_Authentication_Request_configuration" path="/identityprovider/validate-token">
-			<reconnect />
+		<http:request method="GET" doc:name="Token-Validation" doc:id="9e64a9dd-b807-47da-9057-b7338836564a" config-ref="HTTPS_Authentication_Request_configuration" path="/identityprovider/validate-token" responseTimeout="120000">
+			<reconnect frequency="6000"/>
 			<http:headers><![CDATA[#[output application/java
 ---
 {
@@ -32,7 +32,7 @@ payload]]></ee:set-payload>
 		<ee:transform doc:name="Transform Message" doc:id="e708c427-3587-42f3-b9ea-1e6ad6d4f7dc">
 			<ee:message>
 				<ee:set-payload><![CDATA[%dw 2.0
-output application/java
+output application/json
 ---
 payload]]></ee:set-payload>
 			</ee:message>
@@ -46,17 +46,34 @@ output application/java
 	//IsOrganization: payload.IsOrganization default null
 
 }]]></ee:set-variable>
+				<ee:set-variable variableName="initialPayload" ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-variable>
 			</ee:variables>
 		</ee:transform>
 		<logger level="INFO" doc:name="Logger" doc:id="b560fb44-7cb1-46a5-9ce1-4cdb20555531" message="#[payload]" />
-		<http:request method="GET" doc:name="Request" doc:id="59d24c5b-9ca6-4036-b5e6-33ef5a664c1a" config-ref="HTTPS_codeconnect_Request_configuration" path="/customers-tax-id" responseTimeout="1200000">
-			<http:query-params><![CDATA[#[output application/java
+		<try doc:name="Try" doc:id="4c8bf1b2-a6ed-4cc9-8a84-2b6f5515c284" >
+			<http:request method="GET" doc:name="Request" doc:id="59d24c5b-9ca6-4036-b5e6-33ef5a664c1a" config-ref="HTTPS_codeconnect_Request_configuration" path="/customers-tax-id" responseTimeout="30000">
+			<reconnect frequency="6000" />
+				<http:query-params><![CDATA[#[output application/java
 ---
 {
 	"TaxID" : payload.SSN,
 	"IsOrganization" : false
 }]]]></http:query-params>
 		</http:request>
+		<error-handler >
+				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="d865a6bd-089d-40b9-affd-d6ba3c8078d1" type="HTTP:CONNECTIVITY, HTTP:RETRY_EXHAUSTED, HTTP:TIMEOUT">
+					<set-variable value="#[true]" doc:name="isDWcall" doc:id="e3849ee1-bd86-4348-811b-27e6ba3c607f" variableName="isDWcall"/>
+					<logger level="INFO" doc:name="Error-logger" doc:id="ec8f4e89-33df-48ed-9d53-e63d6ccd91a6" message="#[vars.isDWcall]"/>
+					<logger level="INFO" doc:name="Logger" doc:id="52310520-3f7a-44a2-be38-ef8cf85c25ee" />
+					<flow-ref doc:name="alternate-route-sub-flow" doc:id="386ec560-e8ea-4243-b170-0300c7c46b9c" name="alternate-route-sub-flow" />
+				
+
+</on-error-continue>
+			</error-handler>
+		</try>
 		<logger level="INFO" doc:name="Logger" doc:id="e059bdaf-f788-46e6-9f5c-5af62c0e0d8a" message="#[payload]" />
 	</sub-flow>
 	
@@ -111,13 +128,35 @@ payload
 				<logger level="INFO" doc:name="Logger" doc:id="29a44158-3c13-419f-86f9-e46163346132" message="#[payload]"/>
 				<flow-ref doc:name="account-ValidationFlow" doc:id="8a2baf59-4818-4cdf-a268-32bbcaa321a8" name="account-ValidationFlow"/>
 			</when>
-			
 			<otherwise>
 				<logger level="INFO" doc:name="Logger" doc:id="06c00a60-bb38-4257-a4a4-db3f619c9fc2" message="#[payload]" />
 				<set-payload value="#[vars.initialPayload]" doc:name="initialPayload-var" doc:id="861227e5-c375-4d3a-be8d-02d4f2a43a88" />
 				<flow-ref doc:name="create-new-account-sub-Flow" doc:id="1ef080c0-62b9-4698-8324-60a4b4358be0" name="create-new-account-sub-Flow"/>
 			</otherwise>
 		</choice>
+		<ee:transform doc:name="Transform Message" doc:id="8d2eb3da-a0b1-4f7f-b089-63436b8ef1fd" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="splunkPayload" ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"unique-ID": vars.uniqueId,
+	"path": message.attributes.relativePath,
+	"status": "success",
+	"success-message": payload.Message,
+	"time": (now() >> "America/New_York") ++ "EST"
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<async doc:name="Async" doc:id="c1c1839e-82b4-44f9-9f6a-708030caf1ef" >
+			<flow-ref doc:name="log-to-splunk-Flow" doc:id="2df098d9-d92c-42bb-b9f9-2470fa45ab0a" name="log-to-splunk-Flow" />
+		</async>
 		<error-handler ref="global-error-handler">
 	</error-handler>
 	</flow>
@@ -148,14 +187,16 @@ output application/json
   "IDCountry": "USA",
   "IDState": payload.IDState,
   "IDNumber": payload.IDNumber,
-  "IDType": payload.IDType,
+  "IDType": payload.IDType as Number,
   "IDIssued": payload.IDIssued,
   "IDExpired": payload.IDExpired
 }
 ]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
-		<http:request method="POST" doc:name="Request" doc:id="1978774d-4152-4c54-8e2a-20b2be7a78e5" config-ref="HTTPS_codeconnect_Request_configuration" path="/customer-deposit" />
+		<http:request method="POST" doc:name="Request" doc:id="1978774d-4152-4c54-8e2a-20b2be7a78e5" config-ref="HTTPS_codeconnect_Request_configuration" path="/customer-deposit" responseTimeout="30000">
+			<reconnect frequency="6000" />
+			</http:request>
 		<logger level="INFO" doc:name="Logger" doc:id="e71bf524-0d60-474f-bdaa-18616bacdba6" message="#[payload]"/>
 		<ee:transform doc:name="Transform Message" doc:id="5162542b-8b8e-4430-81ab-bba37c0a8968" >
 			<ee:message >
@@ -166,8 +207,8 @@ output application/json
 	
     accountNumber:  payload.AccountNumber,
 	routingNumber: p('secure::RoutingNumber'),
-	status: "201",
-	message:  "New Account Opened Successfully"
+	Status: "201",
+	Message:  "New Account Opened Successfully"
 
 
 

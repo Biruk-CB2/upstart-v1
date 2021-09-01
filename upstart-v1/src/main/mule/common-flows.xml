@@ -1,5 +1,47 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd"></mule>
+<mule xmlns:email="http://www.mulesoft.org/schema/mule/email" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/email/current/mule-email.xsd">
+	<flow name="log-to-splunk-Flow" doc:id="76f66c08-f5b2-4dd8-b5d4-3599f2744820" >
+		<ee:transform doc:name="Transform Message" doc:id="1c1bc6e1-fae0-4c01-b562-9ed64cca667a" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"Event":"this is upstart",
+	"time": now()
+} ++ vars.splunkPayload]]></ee:set-payload>
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="splunk" ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	token: p('secure::splunk.token')
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<http:request method="POST" doc:name="Request" doc:id="e580aeac-ea52-4c44-912c-6ef46183fda3" config-ref="Splunk_HTTPS_Request_configuration" path="${secure::splunk.resourcePath}">
+			<http:headers ><![CDATA[#[output application/java
+---
+{
+	"Authorization" : vars.splunk.token
+}]]]></http:headers>
+		</http:request>
+	</flow>
+	<sub-flow name="send-Email-Notification-Sub_Flow" doc:id="d887d87c-0810-4c1b-bcff-73c97c64af5c" >
+		<email:send doc:name="Send" doc:id="5dbad1e8-dcac-4cc6-9755-340e627430bd" config-ref="Email_SMTP" fromAddress="noreply@customersbank.com" subject="upstart-v1 error return">
+			<reconnect count="1" />
+			<email:to-addresses >
+				<email:to-address value="btullu@customersbank.com" />
+				<email:to-address value="nsatina@customersbank.com" />
+			</email:to-addresses>
+			<email:body contentType="text/plain" encoding="UTF-8" />
+		</email:send>
+	</sub-flow>
+</mule>
