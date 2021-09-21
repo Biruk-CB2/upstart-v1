@@ -151,9 +151,48 @@ output application/json
                 </ee:transform>
             <async doc:name="Async" doc:id="d68ada1b-4d92-4d5c-80f8-0e45a4c04f66" >
 			<flow-ref doc:name="log to splunk" doc:id="4d3aa409-c5a9-430b-88fe-d0e08063a65f" name="log-to-splunk-Flow"/>
-		</async>
+		
+</async>
 			<flow-ref doc:name="send-Email" doc:id="bccdeb68-a2c5-43f0-af27-6c6b93bc1446" name="send-Email-Notification-Sub_Flow" />
             
+</on-error-propagate>
+
+
+<on-error-propagate enableNotifications="true" logException="true" type="ACCOUNT:RESTRICTED">
+			<logger level="INFO" doc:name="Logger" doc:id="3da5c4ca-da0e-4cae-8c36-9f53729f304f" message="#[error.errorMessage.payload]"/>
+			<ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	Message: "Declined! Customer account is restricted",
+	Status: 204 
+}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus"><![CDATA[200]]></ee:set-variable>
+						<ee:set-variable variableName="reasonPhrase" ><![CDATA["process declined"]]></ee:set-variable>
+                    <ee:set-variable variableName="splunkPayload" ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"apiName": p('api.name'),
+	"unique-ID": vars.uniqueId,
+	"path": message.attributes.relativePath,
+	"status": "error/fail",
+	"error-message": error.description default null,
+	"description": error.detailedDescription,
+	"payload": error.muleMessage.payload default null,
+	"error-type": error.errorType.identifier default "",
+	"time": (now() >> "America/New_York") ++ "EST"
+}]]></ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+			<flow-ref doc:name="log-to-splunk" doc:id="5bd5d70b-4b49-4c03-9b0c-5a176b37fb38" name="log-to-splunk-Flow"/>
+			<flow-ref doc:name="send-Email-" doc:id="b3c58994-40c3-435f-8088-bdac9bbd04ae" name="send-Email-Notification-Sub_Flow"/>
+            
+
 </on-error-propagate>
             
 		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="d13f7c19-3ab9-499b-8525-a574683a873b" type="HTTP:CONNECTIVITY, HTTP:RETRY_EXHAUSTED, HTTP:TIMEOUT, MULE:RETRY_EXHAUSTED, APIKIT:RETRY_EXHAUSTED">
@@ -195,10 +234,10 @@ output application/json
 				<email:body contentType="text/plain" encoding="UTF-8" >
 				</email:body>
 			</email:send> -->
-		<async doc:name="Async" doc:id="df842fe5-3b6e-4e45-9fc5-c277aa2cf6c1" >
-			<flow-ref doc:name="log to splunk" doc:id="a7703a0f-dbef-45aa-a3cb-7673dd8274a2" name="log-to-splunk-Flow"/>
-		</async>
-			<flow-ref doc:name="send-Email" doc:id="033e5a8e-3092-4950-acbf-8eaeaec7c194" name="send-Email-Notification-Sub_Flow"/>
+			<async doc:name="Async" doc:id="b7ccba60-a57c-40b3-b5e8-f5a0c0ce75a4" >
+				<flow-ref doc:name="Flow Reference" doc:id="4a73f989-99bc-45b2-ac1a-439bfe3c1a2a" name="log-to-splunk-Flow" />
+			</async>
+			<flow-ref doc:name="send-Email" doc:id="033e5a8e-3092-4950-acbf-8eaeaec7c194" name="send-Email-Notification-Sub_Flow" />
 		
 </on-error-propagate>
 
@@ -234,8 +273,9 @@ output application/json
                 </ee:transform>
             <async doc:name="Async" doc:id="8bbf0bb3-de65-42b3-a709-e88cc13c3cc1" >
 			<flow-ref doc:name="log to splunk" doc:id="2b516ac4-82d0-4592-8392-2ce59caf21ba" name="log-to-splunk-Flow"/>
-		</async>
-			<flow-ref doc:name="send-Email" doc:id="03eadc28-2cf5-456c-b027-b2ce1e4685e7" name="send-Email-Notification-Sub_Flow"/>
+		
+</async>
+			<flow-ref doc:name="send-Email" doc:id="03eadc28-2cf5-456c-b027-b2ce1e4685e7" name="send-Email-Notification-Sub_Flow" />
             
 </on-error-propagate>
             <on-error-propagate type="APIKIT:NOT_FOUND" enableNotifications="true" logException="true">
@@ -272,8 +312,9 @@ output application/json
                 </ee:transform>
             <async doc:name="Async" doc:id="83c172e3-54f2-4eca-b046-fcbfda363752" >
 			<flow-ref doc:name="log to splunk" doc:id="248863c2-f780-481a-9672-35fd46b230ee" name="log-to-splunk-Flow"/>
-		</async>
-			<flow-ref doc:name="send-Email" doc:id="8fa5759d-f376-4861-b3d2-fcff099f5007" name="send-Email-Notification-Sub_Flow"/>
+		
+</async>
+			<flow-ref doc:name="send-Email" doc:id="8fa5759d-f376-4861-b3d2-fcff099f5007" name="send-Email-Notification-Sub_Flow" />
             
 </on-error-propagate>
         
@@ -309,8 +350,9 @@ output application/json
                 </ee:transform>
             <async doc:name="Async" doc:id="de569df3-e09d-443c-988b-83d78a36f33e" >
 			<flow-ref doc:name="log to splunk" doc:id="8296a8e5-15ec-4ffa-b397-0ee7745004cd" name="log-to-splunk-Flow"/>
-		</async>
-			<flow-ref doc:name="send-Email" doc:id="35e0556e-c679-4405-b362-78fbad9149e0" name="send-Email-Notification-Sub_Flow"/>
+		
+</async>
+			<flow-ref doc:name="send-Email" doc:id="35e0556e-c679-4405-b362-78fbad9149e0" name="send-Email-Notification-Sub_Flow" />
             
 </on-error-propagate>
 		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="ca6a2803-6db4-4a38-8083-56a3c6300f74" type="ANY">
@@ -346,8 +388,9 @@ output application/json
 			</ee:transform>
 		<async doc:name="Async" doc:id="c3174ccb-c7ba-4ed5-b893-c59a0f394b53" >
 			<flow-ref doc:name="log to splunk" doc:id="2210bdf9-4800-4099-9da2-89ed1fb094e9" name="log-to-splunk-Flow"/>
-		</async>
-			<flow-ref doc:name="send-Email" doc:id="80c88bb2-1e13-432f-9447-2620fe27a00a" name="send-Email-Notification-Sub_Flow"/>
+		
+</async>
+			<flow-ref doc:name="send-Email" doc:id="80c88bb2-1e13-432f-9447-2620fe27a00a" name="send-Email-Notification-Sub_Flow" />
 		
 </on-error-propagate>
 		

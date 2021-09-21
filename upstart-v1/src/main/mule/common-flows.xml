@@ -26,7 +26,8 @@ output application/json
 }]]></ee:set-variable>
 			</ee:variables>
 		</ee:transform>
-		<http:request method="POST" doc:name="Request" doc:id="e580aeac-ea52-4c44-912c-6ef46183fda3" config-ref="Splunk_HTTPS_Request_configuration" path="${secure::splunk.resourcePath}">
+		<http:request method="POST" doc:name="splunk-log" doc:id="e580aeac-ea52-4c44-912c-6ef46183fda3" config-ref="Splunk_HTTPS_Request_configuration" path="${secure::splunk.resourcePath}">
+			<non-repeatable-stream />
 			<http:headers ><![CDATA[#[output application/java
 ---
 {

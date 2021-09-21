@@ -83,13 +83,114 @@ payload]]></ee:set-variable>
 				<ee:set-payload ><![CDATA[%dw 2.0
 output application/json
 ---
-payload]]></ee:set-payload>
+{
+"FirstName": payload.FirstName,
+"LastName": payload.LastName,
+"StreetAddress1": payload.StreetAddress1,
+"StreetAddress2": payload.StreetAddress2,
+"City": payload.City,
+"State": payload.State,
+"Zip": payload.Zip,
+"DOB": payload.DOB,
+"SSN": payload.SSN,
+"Phone":  payload.Phone,
+"Email": payload.Email,
+"Branch": payload.Branch default "107",
+"Code": payload.ProdCode default "002",
+"BinNumber": payload.BinNumber default "429708",
+"DPExcpPlnNbr":payload.DPExcpPlnNbr,
+"Occupation": payload.Occupation,
+"OccupationStatus": payload.OccupationStatus,
+"Citizenship": payload.Citizenship,
+"MothersMaiden": payload.MothersMaiden,
+"IDType": payload.IDType as Number,
+"IDNumber": payload.IDNumber,
+"IDIssued": payload.IDIssued,
+"IDExpired": payload.IDExpired,
+"IDCountry": "USA",
+"IDState": payload.IDState,
+"SrcOfFunds": payload.SrcOfFunds,
+"TypOfFunds": payload.TypOfFunds,
+"PrpOfAcct": payload.PrpOfAcct,
+"NbrOfDp": payload.NbrOfDp,
+"TotDpAmt": payload.TotDpAmt,
+"NbrOfCashDp": payload.NbrOfCashDp,
+"CashDpAmt": payload.CashDpAmt,
+"NbrOfCashWthdrwl": payload.NbrOfCashWthdrwl,
+"CashWthdrwlAmt": payload.CashWthdrwlAmt,
+"AmtWireAct": payload.AmtWireAct,
+"DomInWireAct": payload.DomInWireAct,
+"NbrDomWire": payload.NbrDomWire,
+"DomInWireAmt": payload.DomInWireAmt,
+"DomOutWireAct": payload.DomOutWireAct,
+"NbrDomOutWire": payload.NbrDomOutWire,
+"DomOutWireAmt": payload.DomOutWireAmt,
+"FrgnInWireAct": payload.FrgnInWireAct,
+"InCtryCde": payload.InCtryCde,
+"NbrFrgnInWire": payload.NbrFrgnInWire,
+"FrgnInWireAmt": payload.FrgnInWireAmt,
+"FrgnOutWireAct": payload.FrgnOutWireAct,
+"NbrFrgnOutWire": payload.NbrFrgnOutWire,
+"FrgnOutWireAmt": payload.FrgnOutWireAmt,
+"OutCtryCde": payload.OutCtryCde
+}
+]]></ee:set-payload>
 			</ee:message>
 			<ee:variables >
 				<ee:set-variable variableName="initialPayload" ><![CDATA[%dw 2.0
-output application/java
+output application/json
 ---
-payload
+{
+"FirstName": payload.FirstName,
+"LastName": payload.LastName,
+"StreetAddress1": payload.StreetAddress1,
+"StreetAddress2": payload.StreetAddress2,
+"City": payload.City,
+"State": payload.State,
+"Zip": payload.Zip,
+"DOB": payload.DOB,
+"SSN": payload.SSN,
+"Phone":  payload.Phone,
+"Email": payload.Email,
+"Branch": payload.Branch default "107",
+"Code": payload.ProdCode default "002",
+"BinNumber": payload.BinNumber default "429708",
+"DPExcpPlnNbr":payload.DPExcpPlnNbr,
+"Occupation": payload.Occupation,
+"OccupationStatus": payload.OccupationStatus,
+"Citizenship": payload.Citizenship,
+"MothersMaiden": payload.MothersMaiden,
+"IDType": payload.IDType as Number,
+"IDNumber": payload.IDNumber,
+"IDIssued": payload.IDIssued,
+"IDExpired": payload.IDExpired,
+"IDCountry": "USA",
+"IDState": payload.IDState,
+"SrcOfFunds": payload.SrcOfFunds,
+"TypOfFunds": payload.TypOfFunds,
+"PrpOfAcct": payload.PrpOfAcct,
+"NbrOfDp": payload.NbrOfDp,
+"TotDpAmt": payload.TotDpAmt,
+"NbrOfCashDp": payload.NbrOfCashDp,
+"CashDpAmt": payload.CashDpAmt,
+"NbrOfCashWthdrwl": payload.NbrOfCashWthdrwl,
+"CashWthdrwlAmt": payload.CashWthdrwlAmt,
+"AmtWireAct": payload.AmtWireAct,
+"DomInWireAct": payload.DomInWireAct,
+"NbrDomWire": payload.NbrDomWire,
+"DomInWireAmt": payload.DomInWireAmt,
+"DomOutWireAct": payload.DomOutWireAct,
+"NbrDomOutWire": payload.NbrDomOutWire,
+"DomOutWireAmt": payload.DomOutWireAmt,
+"FrgnInWireAct": payload.FrgnInWireAct,
+"InCtryCde": payload.InCtryCde,
+"NbrFrgnInWire": payload.NbrFrgnInWire,
+"FrgnInWireAmt": payload.FrgnInWireAmt,
+"FrgnOutWireAct": payload.FrgnOutWireAct,
+"NbrFrgnOutWire": payload.NbrFrgnOutWire,
+"FrgnOutWireAmt": payload.FrgnOutWireAmt,
+"OutCtryCde": payload.OutCtryCde
+}
 ]]></ee:set-variable>
 			</ee:variables>
 		</ee:transform>
@@ -126,6 +227,7 @@ payload
 </when>
 			<when expression="#[payload.Exists]">
 				<logger level="INFO" doc:name="Logger" doc:id="29a44158-3c13-419f-86f9-e46163346132" message="#[payload]"/>
+				<flow-ref doc:name="check-restriction-flow" doc:id="61857fa1-69a0-4371-94eb-20fd859d8519" name="check-restriction-flow"/>
 				<flow-ref doc:name="account-ValidationFlow" doc:id="8a2baf59-4818-4cdf-a268-32bbcaa321a8" name="account-ValidationFlow"/>
 			</when>
 			<otherwise>
@@ -166,38 +268,45 @@ output application/json
 				<ee:set-payload ><![CDATA[%dw 2.0
 output application/json
 ---
-{
-  "FirstName": payload.FirstName,
-  "LastName": payload.LastName,
-  "StreetAddress1": payload.StreetAddress1,
-  "StreetAddress2": payload.StreetAddress2,
-  "City": payload.City,
-  "State": payload.State,
-  "Zip": payload.Zip,
-  "DOB": payload.DOB,
-  "SSN": payload.SSN,
-  "Phone":  payload.Phone,
-   "Email": payload.Email,
-  "Branch": payload.Branch default "107",
-  "Code": payload.ProdCode default "002",
-  "BinNumber": payload.BinNumber default "429708",
-  "Occupation": payload.Occupation,
-  "OccupationStatus": payload.OccupationStatus,
-  "MothersMaiden": payload.MothersMaiden,
-  "IDCountry": "USA",
-  "IDState": payload.IDState,
-  "IDNumber": payload.IDNumber,
-  "IDType": payload.IDType as Number,
-  "IDIssued": payload.IDIssued,
-  "IDExpired": payload.IDExpired
-}
+payload
 ]]></ee:set-payload>
 			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="acctKeyWord" ><![CDATA[%dw 2.0
+output application/json
+---
+{
+"DPTxnCde": 380,
+"DPKywrdCde": "EXFEXD",
+"DPKywrdVal": now() as Date {"format":"MM/dd/yyyy"} as String {"format":"MM/dd/yyyy"} 
+} ]]></ee:set-variable>
+				<ee:set-variable variableName="initialPayload" ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-variable>
+			</ee:variables>
 		</ee:transform>
-		<http:request method="POST" doc:name="Request" doc:id="1978774d-4152-4c54-8e2a-20b2be7a78e5" config-ref="HTTPS_codeconnect_Request_configuration" path="/customer-deposit" responseTimeout="30000">
+		<http:request method="POST" doc:name="Request" doc:id="1978774d-4152-4c54-8e2a-20b2be7a78e5" config-ref="HTTPS_codeconnect_Request_configuration" path="/customer-deposit" responseTimeout="300000">
 			<reconnect frequency="6000" />
+			<http:body ><![CDATA[#[vars.initialPayload]]]></http:body>
 			</http:request>
 		<logger level="INFO" doc:name="Logger" doc:id="e71bf524-0d60-474f-bdaa-18616bacdba6" message="#[payload]"/>
+		<set-variable value="#[payload.AccountNumber]" doc:name="AcctNbr" doc:id="a1900f8c-c466-4e8a-a562-e7b9818785b5" variableName="AccountNumber"/>
+		<try doc:name="Try" doc:id="3b6a32d9-9197-4886-9fbd-336c73fd81a7" >
+			<http:request method="PUT" doc:name="acct-keyWord" doc:id="d340ebe9-7250-4f42-b4f7-c6d138e829c1" config-ref="HTTPS_codeconnect_Request_configuration" path="{accounts}/keywords" responseTimeout="20000">
+				<http:body ><![CDATA[#[vars.acctKeyWord]]]></http:body>
+				<http:uri-params ><![CDATA[#[output application/java
+---
+{
+	accounts : payload.AccountNumber
+}]]]></http:uri-params>
+			</http:request>
+			<error-handler >
+				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="f696edc8-e80a-4231-bc90-3432675db227" >
+					<logger level="INFO" doc:name="Logger" doc:id="4ab1d68a-d92d-445f-bf76-e7f2a3851d34" />
+				</on-error-continue>
+			</error-handler>
+		</try>
 		<ee:transform doc:name="Transform Message" doc:id="5162542b-8b8e-4430-81ab-bba37c0a8968" >
 			<ee:message >
 				<ee:set-payload ><![CDATA[%dw 2.0
@@ -205,7 +314,7 @@ output application/json
 ---
 {
 	
-    accountNumber:  payload.AccountNumber,
+    accountNumber: vars.AccountNumber,
 	routingNumber: p('secure::RoutingNumber'),
 	Status: "201",
 	Message:  "New Account Opened Successfully"

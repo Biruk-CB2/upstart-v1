@@ -5,31 +5,90 @@
 	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
 http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="check-restriction-flow" doc:id="2d193e03-c4d0-45e5-940e-5adfb8ff6029" >
+		<set-variable value="#[payload.CustomerNumber]" doc:name="custNumber" doc:id="bc6eac97-235d-4740-bf6b-f34eb7be3438" variableName="custNumber"/>
+		<http:request method="GET" doc:name="GET-ListOfAccounts" doc:id="44d2a99f-3704-43ca-bb46-93a485979a42" config-ref="HTTPS_codeconnect_Request_configuration" path="/customers/accounts" responseTimeout="20000">
+			<reconnect frequency="4000" />
+			<http:query-params ><![CDATA[#[output application/java
+---
+{
+	"AccountNumber" : payload.CustomerNumber
+}]]]></http:query-params>
+		</http:request>
+		<ee:transform doc:name="Transform Message" doc:id="8a3f34aa-42aa-49ec-bc9c-9bf25b6a09cd" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload.Entity."related-accountsLst".."CIRltApplNbr01"]]></ee:set-payload>
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="rstrAcct" ><![CDATA[%dw 2.0
+output application/java
+---
+[]]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<foreach doc:name="For Each" doc:id="15c37b98-3d4a-4e58-8649-b1d070a27bd4" >
+			<http:request method="GET" doc:name="Request" doc:id="94d827ba-8ab5-4a86-922a-012334aa24aa" config-ref="HTTPS_codeconnect_Request_configuration" path="/accounts">
+			<http:query-params><![CDATA[#[output application/java
+---
+{
+	"AccountNumber" : payload
+}]]]></http:query-params>
+		</http:request>
+			<ee:transform doc:name="Transform Message" doc:id="bf01b68b-b956-4e7e-8c1e-44e2304feae5">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+var PostInd = payload.Entity.account.PostInd default ""
+---
+if (payload.Entity.account.PostInd?)
+	if (payload.Entity.account.PostInd == "")
+		false
+	else
+		true
+else
+	false]]></ee:set-payload>
+			</ee:message>
+				<ee:variables >
+					<ee:set-variable variableName="rstrAcct" ><![CDATA[%dw 2.0
+output application/json
+var PostInd = payload.Entity.account.PostInd default ""
+
+---
+if (payload.Entity.account.PostInd?)
+	if (payload.Entity.account.PostInd == "")
+		vars.rstrAcct + false
+	else
+		vars.rstrAcct + true
+else
+	vars.rstrAcct + false
+	]]></ee:set-variable>
+				</ee:variables>
+		</ee:transform>
+		</foreach>
+		<choice doc:name="Choice" doc:id="97a17d56-27c8-4a29-a15a-4db6a67907ff" >
+			<when expression='#[vars.rstrAcct contains true]'>
+				<try doc:name="Try" doc:id="84c5c603-6022-40e8-a113-441c0de36d21" >
+					<raise-error doc:name="Restrict-flag" doc:id="549db23e-15a0-4392-a62c-9b2ca1e1a27b" type="ACCOUNT:RESTRICTED"/>
+				</try>
+			</when>
+			<otherwise>
+				<flow-ref doc:name="account-validation" doc:id="22a7546e-17c2-4b20-bd89-be4e33d76822" name="account-ValidationFlow" />
+			</otherwise>
+		</choice>
+	</flow>
 	<flow name="account-ValidationFlow" doc:id="f0c7d8d0-8625-4fa9-80bd-c0db452ed52b" >
-		<try doc:name="Try" doc:id="cf18fa2e-db31-40b8-bb07-008211fc9320" >
-			<http:request method="GET" doc:name="GET: Customer Profile Dynamic" doc:id="a17abbf5-ecd2-4198-99ac-282a5adf1de0" config-ref="HTTPS_codeconnect_Request_configuration" path="/customers/profile" responseTimeout="30000">
-			<http:query-params><![CDATA[#[output application/java
+		<logger level="INFO" doc:name="Logger" doc:id="cd56e3d7-dca5-4453-9a8b-ca99525bcb20" />
+		<http:request method="GET" doc:name="GET: Customer Profile Dynamic" doc:id="a17abbf5-ecd2-4198-99ac-282a5adf1de0" config-ref="HTTPS_codeconnect_Request_configuration" path="/customers/profile" responseTimeout="15000">
+			<reconnect frequency="5000" />
+				<http:query-params><![CDATA[#[output application/java
 ---
 {
-	"AccountNumber" : payload.CustomerNumber
+	"AccountNumber" : vars.custNumber
 }]]]></http:query-params>
 		</http:request>
-		<error-handler >
-				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="7456f7ee-ac6f-4d5b-ba21-17ec31ec5678" type="HTTP:CONNECTIVITY">
-					<logger level="INFO" doc:name="Logger" doc:id="cd56e3d7-dca5-4453-9a8b-ca99525bcb20" />
-					<until-successful maxRetries="1" doc:name="Until Successful" doc:id="12d412f0-f242-4f42-8268-78547798621b" millisBetweenRetries="7000">
-						<http:request method="GET" doc:name="GET: Customer Profile Dynamic" doc:id="fcf45d1b-9eaa-44ff-8cfd-803bea42d447" config-ref="HTTPS_codeconnect_Request_configuration" path="/customers/profile" responseTimeout="30000">
-			<http:query-params><![CDATA[#[output application/java
----
-{
-	"AccountNumber" : payload.CustomerNumber
-}]]]></http:query-params>
-		</http:request>
-					</until-successful>
-				
-</on-error-propagate>
-			</error-handler>
-		</try>
 		<ee:transform doc:name="Transform Message" doc:id="70ae179b-1fb9-43c3-bcd5-aa224ba8ace1" >
 			<ee:message >
 				<ee:set-payload ><![CDATA[%dw 2.0

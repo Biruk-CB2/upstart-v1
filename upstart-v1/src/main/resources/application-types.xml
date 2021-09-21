@@ -97,4 +97,5 @@ type accnt_cr = {|
       </types:input-event>
     </types:processor-declaration>
   </types:enrichment>
+  <types:enrichment select="#8a3f34aa-42aa-49ec-bc9c-9bf25b6a09cd"/>
 </types:mule>
