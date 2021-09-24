@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd 
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+    
+	<flow name="upstart-v1-main">
+        <http:listener config-ref="upstart-v1-httpListenerConfig" path="/api/*">
+            <http:response statusCode="#[vars.httpStatus default 200]" reasonPhrase='#[vars.reasonPhrase]'>
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]" reasonPhrase="#[vars.reasonPhrase]">
+                <http:body><![CDATA[#[payload]]]></http:body>
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:router config-ref="upstart-v1-config" />
+        <error-handler ref="global-error-handler">
+	</error-handler>
+            </flow>
+    <flow name="get:\healthCheck:upstart-v1-config">
+        <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  message: " This API is Up and Running!"
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="get:\login:upstart-v1-config">
+		<ee:transform doc:name="Transform Message" doc:id="5ef6e7d3-1cb3-478e-ba65-197e6132e5db" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload
+]]></ee:set-payload>
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="uniqueId" ><![CDATA[%dw 2.0
+output application/json
+---
+uuid()]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<flow-ref doc:name="token-request-flow" doc:id="f77dbed2-46fc-4e9b-8d20-1e68f8032716" name="token-request-flow"/>
+    </flow>
+    <flow name="post:\customer-deposit">
+		<ee:transform doc:name="Transform Message" doc:id="f4dfdb01-6a0a-41ca-897d-a1d65d27c6c4">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+					</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="uniqueId" ><![CDATA[%dw 2.0
+output application/json
+---
+uuid()]]></ee:set-variable>
+			</ee:variables>
+				</ee:transform>
+		<choice doc:name="Choice" doc:id="e5ec52ba-7463-406e-95ab-e82423d6d075" >
+			<when expression="#[attributes.headers.token? == false]">
+				<logger level="INFO" doc:name="Logger" doc:id="8500f7af-741c-4239-8df0-1abb643f09d8" />
+				<raise-error doc:name="Raise error" doc:id="57f85c22-7077-4861-9999-9e9afd34a0af" type="AUTH:TOKEN_NOTPASSED"/>
+			</when>
+			<when expression='#[(attributes.headers.token == null) or (attributes.headers.token == "")]'>
+				<logger level="INFO" doc:name="Logger" doc:id="19bf0de6-50cb-48c3-9b8c-f64d7e362643" />
+				<raise-error doc:name="Raise error" doc:id="297ad2ff-d1eb-4605-8f99-70f69d863f74" type="AUTH:TOKEN_EMPTY"/>
+			</when>
+			<otherwise >
+				<flow-ref doc:name="customer-deposit-Flow" doc:id="23e70d2b-60e9-4893-9c91-8bbc1f009c22" name="customer-deposit-Flow" />
+			</otherwise>
+		</choice>
+    </flow>
+</mule>

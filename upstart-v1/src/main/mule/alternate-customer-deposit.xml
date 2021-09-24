@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:email="http://www.mulesoft.org/schema/mule/email"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd 
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd 
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/email/current/mule-email.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="85001f88-1afc-40b0-85f4-298e8936b780" >
+		<http:listener-connection host="0.0.0.0" port="8082" />
+	</http:listener-config>
+	<flow name="alternate-route-sub-flow" doc:id="660453b2-cd0a-414a-8bb9-2d2b7c5d40bc" >
+		<http:listener doc:name="Listener" doc:id="48a983d9-013e-4d01-a7b8-06825daf1f3e" config-ref="HTTP_Listener_config" path="/check-alternate"/>
+		<ee:transform doc:name="Transform Message" doc:id="f51f4fd3-6fb7-4381-9a68-4894bd13b945">
+						<ee:message>
+							<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+						</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="Tax_ID" ><![CDATA[%dw 2.0
+output application/json
+---
+
+payload.SSN
+]]></ee:set-variable>
+				<ee:set-variable variableName="initialPayload" ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-variable>
+			</ee:variables>
+					
+</ee:transform>
+		<db:select doc:name="Select" doc:id="ba61a521-956b-47a2-a869-46ebef5f468f" config-ref="Database_Config">
+			<db:sql ><![CDATA[select case when dr.acct_nbr is null then 'true' else 'restricted' end status, p.NATURAL_KEY cust_nbr, trim(leading 0 from d.ACCT_NBR) acct_nbr
+from dw_party_dim p
+inner join DW_DEPOSIT_ACCT_FACT d on d.PRIMARY_ACCT_OWNER_PARTY_ID=p.PARTY_ID
+left join (select acct_nbr, PRIMARY_ACCT_OWNER_PARTY_ID PARTY_ID, row_number() over (PARTITION BY PRIMARY_ACCT_OWNER_PARTY_ID order by acct_nbr) as row_num
+          from dw_deposit_acct_fact
+          where SNAPSHOT_PERIOD_YYYYMM=to_char(sysdate-1,'yyyymm')
+                and ACCT_RESTRICTION is not null
+                and SOURCE_SYSTEM_CODE='IBS'
+          )dr on dr.PARTY_ID=p.party_id and dr.row_num=1
+where p.SNAPSHOT_PERIOD_YYYYMM=to_char(sysdate-1,'yyyymm')
+  and p.SNAPSHOT_PERIOD_YYYYMM=d.SNAPSHOT_PERIOD_YYYYMM
+  and p.SOURCE_SYSTEM_CODE=d.SOURCE_SYSTEM_CODE
+  and p.SOURCE_SYSTEM_CODE='IBS'
+  and p.TAX_ID= :ssn
+  and d.MAJOR_ACCT_TYPE_CODE='CK'
+  and d.CURRENT_STATUS='ACT'
+  and (d.ACCT_RESTRICTION is null or d.ACCT_RESTRICTION in ('D','Z'))
+  and ROWNUM=1
+  order by d.OPEN_DATE desc]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	ssn: vars.Tax_ID
+}]]]></db:input-parameters>
+		</db:select>
+		<choice doc:name="Choice" doc:id="a3b295a4-3054-4c30-865e-663f293818c2" >
+			<when expression="#[(sizeOf(payload)) == 0]">
+				<db:select doc:name="Select" doc:id="55e80c6b-3713-48ab-950f-338c56b717b1" config-ref="Database_Config">
+					<db:sql ><![CDATA[select * from UPSTART_INCOMPLETE_APPS where SSN = :ssn]]></db:sql>
+					<db:input-parameters ><![CDATA[#[{
+	ssn: vars.initialPayload.SSN
+}]]]></db:input-parameters>
+				</db:select>
+				<choice doc:name="Choice" doc:id="f1092b1f-4027-48ac-9bc3-62eda2e75c58" >
+					<when expression="#[(sizeOf(payload)) == 0]">
+						<db:insert doc:name="Insert" doc:id="03e77190-90f0-4908-943f-07f3c1eb8081" config-ref="Database_Config">
+					<db:sql><![CDATA[INSERT INTO UPSTART_INCOMPLETE_APPS
+ (FIRSTNAME, LASTNAME, STREETADDRESS1, STREETADDRESS2, CITY, STATE, ZIP, DOB, SSN, PHONE, EMAIL, BRANCH, PRODCODE, BINNUMBER, OCCUPATION, OCCUPATIONSTATUS, CITIZENSHIP, MOTHERSMAIDEN, IDTYPE, IDNUMBER, 
+ IDISSUED, IDEXPIRED, IDSTATE, SRCOFFUNDS, TYPOFFUNDS, PRPOFACCT, NBROFDP, TOTDPAM, NBRCASHDP,
+ CASHDPAMT, NBROFCASHWTHDRWL, CASHWTHDRWLAMT, ANTWIREACT, DOMINWIREACT, NBRDOMWIRE, DOMINWIREAMT, DOMOUTWIREACT, NBRDOMOUTWIRE, DOMOUTWIREAMT, FRGNINWIREACT, INCTRYCDE, NBRFRGNINWIRE, 
+ FRGNINWIREAMT, FRGNOUTWIREACT, NBRFRGNOUTWIRE, FRGNOUTWIREAMT, OUTCTRYCDE, 
+ APPLICATION_STATUS, LOAD_DATE, DEP_ACCT_NBR, CUST_IBS_NBR) 
+values (:FIRSTNAME, :LASTNAME, :STREETADDRESS1, :STREETADDRESS2, :CITY, :STATE, :ZIP, :DOB, :SSN, :PHONE, :EMAIL, :BRANCH, :PRODCODE, :BINNUMBER, :OCCUPATION, :OCCUPATIONSTATUS, :CITIZENSHIP, :MOTHERSMAIDEN, :IDTYPE, :IDNUMBER, :IDISSUED, :IDEXPIRED, :IDSTATE, :SRCOFFUNDS, :TYPOFFUNDS, :PRPOFACCT, :NBROFDP, :TOTDPAM, :NBRCASHDP, :CASHDPAMT, :NBROFCASHWTHDRWL, :CASHWTHDRWLAMT, :ANTWIREACT, :DOMINWIREACT, :NBRDOMWIRE, :DOMINWIREAMT, :DOMOUTWIREACT, :NBRDOMOUTWIRE, :DOMOUTWIREAMT, :FRGNINWIREACT, :INCTRYCDE, :NBRFRGNINWIRE, :FRGNINWIREAMT, :FRGNOUTWIREACT, :NBRFRGNOUTWIRE, :FRGNOUTWIREAMT, :OUTCTRYCDE, :APPLICATION_STATUS, sysdate, :DEP_ACCT_NBR, :CUST_IBS_NBR
+)]]></db:sql>
+					<db:input-parameters><![CDATA[#[{
+'FIRSTNAME':vars.initialPayload.FirstName,
+'LASTNAME':vars.initialPayload.LastName,
+'STREETADDRESS1':vars.initialPayload.StreetAddress1,
+'STREETADDRESS2':vars.initialPayload.StreetAddress2,
+'CITY':vars.initialPayload.City,
+'STATE':vars.initialPayload.State,
+'ZIP':vars.initialPayload.Zip,
+'DOB':vars.initialPayload.DOB,
+'SSN':vars.initialPayload.SSN,
+'PHONE':vars.initialPayload.Phone,
+'EMAIL':vars.initialPayload.Email,
+'BRANCH':vars.initialPayload.Branch,
+'PRODCODE':vars.initialPayload.Code,
+'BINNUMBER':vars.initialPayload.BinNumber,
+'OCCUPATION':vars.initialPayload.Occupation,
+'OCCUPATIONSTATUS':vars.initialPayload.OccupationStatus,
+'CITIZENSHIP':vars.initialPayload.Citizenship,
+'MOTHERSMAIDEN':vars.initialPayload.MothersMaiden,
+'IDTYPE':vars.initialPayload.IDType,
+'IDNUMBER':vars.initialPayload.IDNumber,
+'IDISSUED':vars.initialPayload.IDIssued,
+'IDEXPIRED':vars.initialPayload.IDExpired,
+'IDSTATE':vars.initialPayload.IDState,
+'SRCOFFUNDS':vars.initialPayload.SrcOfFunds,
+'TYPOFFUNDS':vars.initialPayload.TypOfFunds,
+'PRPOFACCT':vars.initialPayload.PrpOfAcct,
+'NBROFDP':vars.initialPayload.NbrOfDp,
+'TOTDPAM':vars.initialPayload.TotDpAmt,
+'NBRCASHDP':vars.initialPayload.NbrOfCashDp,
+'CASHDPAMT':vars.initialPayload.CashDpAmt,
+'NBROFCASHWTHDRWL':vars.initialPayload.NbrOfCashWthdrwl,
+'CASHWTHDRWLAMT':vars.initialPayload.CashWthdrwlAmt,
+'ANTWIREACT':vars.initialPayload.AmtWireAct,
+'DOMINWIREACT':vars.initialPayload.DomInWireAct,
+'NBRDOMWIRE':vars.initialPayload.NbrDomWire,
+'DOMINWIREAMT':vars.initialPayload.DomInWireAmt,
+'DOMOUTWIREACT':vars.initialPayload.DomOutWireAct,
+'NBRDOMOUTWIRE':vars.initialPayload.NbrDomOutWire,
+'DOMOUTWIREAMT':vars.initialPayload.DomOutWireAmt,
+'FRGNINWIREACT':vars.initialPayload.FrgnInWireAct,
+'INCTRYCDE':vars.initialPayload.InCtryCde,
+'NBRFRGNINWIRE':vars.initialPayload.NbrFrgnInWire,
+'FRGNINWIREAMT':vars.initialPayload.FrgnInWireAmt,
+'FRGNOUTWIREACT':vars.initialPayload.FrgnOutWireAct,
+'NBRFRGNOUTWIRE':vars.initialPayload.NbrFrgnOutWire,
+'FRGNOUTWIREAMT':vars.initialPayload.FrgnOutWireAmt,
+'OUTCTRYCDE':vars.initialPayload.OutCtryCde,
+'APPLICATION_STATUS':"INCOMPLETE",
+'LOAD_DATE': 'sysdate',//now() as Date {"format":"dd/MMM/yy"},
+'DEP_ACCT_NBR':null,
+'CUST_IBS_NBR':null
+}]]]></db:input-parameters>
+				</db:insert>
+						<ee:transform doc:name="Transform Message" doc:id="404c5165-149e-44ca-8541-f8d45b7e37ca">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+
+{
+
+	Status: 503,
+	Message: "Sorry! We ran into an issue creating new account. You will receive an email notification when the process is complete."
+
+}
+]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+					</when>
+					<otherwise >
+						<logger level="INFO" doc:name="Logger" doc:id="0d2e4c2e-383e-416b-8fe1-027da485247a" />
+						<ee:transform doc:name="Transform Message" doc:id="ba705a0e-7b99-4ab4-8a04-e728df0affa3" >
+							<ee:message >
+								<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+
+{
+
+	Status: 503,
+	Message: "Sorry! We ran into an issue creating new account. You will receive an email notification when the process is complete."
+
+}
+]]></ee:set-payload>
+							</ee:message>
+						</ee:transform>
+					</otherwise>
+				</choice>
+				<!-- <email:send doc:name="Send" doc:id="257e72ed-2cb7-4f3a-9604-472935cf5786" config-ref="Email_SMTP" fromAddress="noreply@customersbank.com" subject="Upstart-v1 Customer-Deposit api returned 500 error ">
+					<email:to-addresses >
+						<email:to-address value="btullu@customersbank.com" />
+					</email:to-addresses>
+					<email:body contentType="text/plain" encoding="UTF-8">
+					</email:body>
+				</email:send>
+ -->
+			
+</when>
+			<otherwise >
+				<ee:transform doc:name="Transform Message" doc:id="38cc8769-bb19-4b68-a319-f354bbdb36b1" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	AccountNumber: payload[0].ACCT_NBR,
+	RoutingNumber: p('secure::RoutingNumber'),
+	Message:  "Customer has an Existing Valid Account"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="f4ba731b-a4ca-4fb6-a84c-8360b3543034" type="DB:*">
+				<logger level="INFO" doc:name="alternate route failed" doc:id="0753f5be-0d01-4995-9e63-7285ee0628cb" />
+				<ee:transform doc:name="Transform Message" doc:id="3f739dd4-e466-4035-9add-e0c934d9efeb" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{ 
+	Status: 500,
+	Message: "Internal System Error"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	</mule>

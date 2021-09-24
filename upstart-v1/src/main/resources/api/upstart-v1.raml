@@ -1,0 +1,106 @@
+#%RAML 1.0
+title: upstart-customer-deposit 
+description: This API is used by Upstart to	validate existing customer accounts, Onboards new customer & deposit account, Orders debit card for newly created accounts and returns account number and routing number. 
+version: 1.0
+mediaType: application/json
+protocols:
+  - HTTPS
+
+types:
+  accountCreation: !include dataType/account_creation.raml
+  requestDecline: !include dataType/requestDecline.raml
+  accountCreated: !include dataType/accountCreated.raml
+  tokenResponse: !include dataType/tokenResponse.raml
+
+/login:
+  get:
+    headers:
+      UUID?: string
+      username: string
+      password: string
+    responses:
+      200:
+        headers:
+          UUID: string
+        body:
+          application/json:
+            type: tokenResponse
+            example: !include examples/tokenResponseExample.raml
+      400:
+        body:
+          application/json:
+            example: !include examples/standardErrors/400ResponseExample.raml
+      401:
+        body:
+          application/json:
+            example: !include examples/standardErrors/401ResponseExample.raml       
+      404:
+        body:
+          application/json:
+            example: !include examples/standardErrors/404ResponseExample.raml  
+      500:
+        body:
+          application/json:
+            example: !include examples/standardErrors/500ResponseExample.raml
+
+/customer-deposit:
+  description:
+     this is to process loan deposit for customers    
+  post:
+    headers:
+      UUID?: string
+      token?: string
+      time: string
+    body:
+      application/json:
+        type: accountCreation
+        example: !include examples/acccontCreationExample.raml
+    responses:
+      400:
+        body:
+          application/json:
+            example: !include examples/standardErrors/400ResponseExample.raml
+      401:
+        body:
+          application/json:
+            example: !include examples/standardErrors/401ResponseExample.raml       
+      404:
+        body:
+          application/json:
+            example: !include examples/standardErrors/404ResponseExample.raml  
+      500:
+        body:
+          application/json:
+            example: !include examples/standardErrors/500ResponseExample.raml
+      200:
+        description:  A sucess response  for newly created accounts
+        body:
+          application/json:
+            type: accountCreated
+            example: !include examples/accountCreatedExample.raml
+
+      201:
+        description: A sucess response for existed and valid accounts 
+        body:
+          application/json:
+            example: !include examples/validAccountExample.raml
+
+      204:
+        description: This return is a Decline response due to invalid or Restricted account
+        body:
+          application/json:
+            type: requestDecline
+            example: !include examples/requestDeclineExample.raml
+
+
+/healthCheck:
+  description: This resource is dedicated to simply responde to the health status of the API
+  get:
+    responses:
+     200: 
+      body:
+        application/json:
+            example:
+              {message: " This API is Up and Running!"}
+              
+                    

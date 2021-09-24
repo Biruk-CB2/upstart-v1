@@ -1,0 +1,101 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<types:mule xmlns:types="http://www.mulesoft.org/schema/mule/types">
+  <types:catalog>
+    <types:type name="cst-dep" format="json">
+      <types:shape format="weave" example="examples/customer-deposit.json"><![CDATA[%dw 2.0
+
+type cst_dep = {|
+  FirstName: String, 
+  LastName: String, 
+  StreetAddress1: String, 
+  StreetAddress2: String, 
+  City: String, 
+  State: String, 
+  Zip: String, 
+  DOB: String, 
+  SSN: String, 
+  Phone: String, 
+  Email: String, 
+  Branch: String, 
+  ProdCode: String, 
+  BinNumber: String, 
+  Occupation: String, 
+  OccupationStatus: String, 
+  Citizenship: String, 
+  MothersMaiden: String, 
+  IDType: String, 
+  IDNumber: String, 
+  IDIssued: String, 
+  IDExpired: String, 
+  IDState: String, 
+  SrcOfFunds: String, 
+  TypOfFunds: String, 
+  PrpOfAcct: String, 
+  NbrOfDp: String, 
+  TotDpAmt: String, 
+  NbrCashDp: String, 
+  CashDpAmt: String, 
+  NbrOfCashWthdrwl: String, 
+  CashWthdrwlAmt: String, 
+  AntWireAct: String, 
+  DomInWireAct: String, 
+  NbrDomWire: String, 
+  DomInWireAmt: String, 
+  DomOutWireAct: String, 
+  NbrDomOutWire: String, 
+  DomOutWireAmt: String, 
+  FrgnInWireAct: String, 
+  InCtryCde: String, 
+  NbrFrgnInWire: String, 
+  FrgnInWireAmt: String, 
+  FrgnOutWireAct: String, 
+  NbrFrgnOutWire: String, 
+  FrgnOutWireAmt: String, 
+  OutCtryCde: String
+|} {"example": "{\\\"FirstName\\\":\\\"Jon\\\",\\\"LastName\\\":\\\"Smith\\\",\\\"StreetAddress1\\\":\\\"27 W. 24th St.\\\",\\\"StreetAddress2\\\":\\\"Suite 404\\\",\\\"City\\\":\\\"New York\\\",\\\"State\\\":\\\"NY\\\",\\\"Zip\\\":\\\"10010\\\",\\\"DOB\\\":\\\"2000-01-30\\\",\\\"SSN\\\":\\\"123110001\\\",\\\"Phone\\\":\\\"3126227000\\\",\\\"Email\\\":\\\"jsmith@example.com\\\",\\\"Branch\\\":\\\"107\\\",\\\"ProdCode\\\":\\\"044\\\",\\\"BinNumber\\\":\\\"0004356\\\",\\\"Occupation\\\":\\\"Account Manager\\\",\\\"OccupationStatus\\\":\\\"employed\\\",\\\"Citizenship\\\":\\\"US\\\",\\\"MothersMaiden\\\":\\\"Bellinger\\\",\\\"IDType\\\":\\\"Driver License\\\",\\\"IDNumber\\\":\\\"1234567890\\\",\\\"IDIssued\\\":\\\"2017-01-21\\\",\\\"IDExpired\\\":\\\"2021-01-30\\\",\\\"IDState\\\":\\\"CA\\\",\\\"SrcOfFunds\\\":\\\"loan\\\",\\\"TypOfFunds\\\":\\\"check\\\",\\\"PrpOfAcct\\\":\\\"deposit\\\",\\\"NbrOfDp\\\":\\\"0\\\",\\\"TotDpAmt\\\":\\\"0\\\",\\\"NbrCashDp\\\":\\\"0\\\",\\\"CashDpAmt\\\":\\\"0\\\",\\\"NbrOfCashWthdrwl\\\":\\\"0\\\",\\\"CashWthdrwlAmt\\\":\\\"0\\\",\\\"AntWireAct\\\":\\\"0\\\",\\\"DomInWireAct\\\":\\\"0\\\",\\\"NbrDomWire\\\":\\\"0\\\",\\\"DomInWireAmt\\\":\\\"0\\\",\\\"DomOutWireAct\\\":\\\"0\\\",\\\"NbrDomOutWire\\\":\\\"0\\\",\\\"DomOutWireAmt\\\":\\\"0\\\",\\\"FrgnInWireAct\\\":\\\"0\\\",\\\"InCtryCde\\\":\\\"0\\\",\\\"NbrFrgnInWire\\\":\\\"0\\\",\\\"FrgnInWireAmt\\\":\\\"0\\\",\\\"FrgnOutWireAct\\\":\\\"0\\\",\\\"NbrFrgnOutWire\\\":\\\"0\\\",\\\"FrgnOutWireAmt\\\":\\\"0\\\",\\\"OutCtryCde\\\":\\\"0\\\"}"}
+
+]]></types:shape>
+    </types:type>
+    <types:type name="accnt-cr" format="json">
+      <types:shape format="weave" example="examples/create-account.json"><![CDATA[%dw 2.0
+
+type accnt_cr = {|
+  Zip: String, 
+  Email: String, 
+  FirstName: String, 
+  City: String, 
+  IDType: Number {"typeId": "int"}, 
+  StreetAddress2: String, 
+  IDState: String, 
+  StreetAddress1: String, 
+  SSN: String, 
+  State: String, 
+  Phone: String, 
+  DOB: String, 
+  IDCountry: String, 
+  LastName: String, 
+  IDNumber: String, 
+  Branch: String, 
+  Code: String, 
+  Occupation: String, 
+  OccupationStatus: String, 
+  MothersMaiden: String, 
+  IDIssued: String, 
+  IDExpired: String
+|} {"example": "{\\\"Zip\\\":\\\"10010\\\",\\\"Email\\\":\\\"jsmith@example.com\\\",\\\"FirstName\\\":\\\"Jonathan\\\",\\\"City\\\":\\\"New York\\\",\\\"IDType\\\":2,\\\"StreetAddress2\\\":\\\"Suite 404\\\",\\\"IDState\\\":\\\"CA\\\",\\\"StreetAddress1\\\":\\\"27 W. 24th St.\\\",\\\"SSN\\\":\\\"000110001\\\",\\\"State\\\":\\\"NY\\\",\\\"Phone\\\":\\\"3126227000\\\",\\\"DOB\\\":\\\"2000-01-30\\\",\\\"IDCountry\\\":\\\"USA\\\",\\\"LastName\\\":\\\"Smith\\\",\\\"IDNumber\\\":\\\"1234567890\\\",\\\"Branch\\\":\\\"107\\\",\\\"Code\\\":\\\"044\\\",\\\"Occupation\\\":\\\"Account Manager\\\",\\\"OccupationStatus\\\":\\\"employed\\\",\\\"MothersMaiden\\\":\\\"Bellinger\\\",\\\"IDIssued\\\":\\\"2017-01-21\\\",\\\"IDExpired\\\":\\\"2021-01-30\\\"}"}
+
+]]></types:shape>
+    </types:type>
+  </types:catalog>
+  <types:enrichment select="#b80443db-4b0b-4ca3-b6e2-58d9dba72057"/>
+  <types:enrichment select="#8edde73f-a78b-4a49-83ec-9261fe47527e">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="accnt-cr"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#8a3f34aa-42aa-49ec-bc9c-9bf25b6a09cd"/>
+</types:mule>
